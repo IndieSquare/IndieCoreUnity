@@ -493,34 +493,44 @@ public class IndieCore : MonoBehaviour {
 		}
 
 
-
-		Debug.Log (urlParams);
+		 
+		Debug.Log ("urlparams: "+urlParams);
+	 
 		bool fail = false;
 		#if UNITY_IPHONE
 		Application.OpenURL("indiewallet://"+urlParams);
 		#elif UNITY_ANDROID
+
 		AndroidJavaClass up = new AndroidJavaClass ("com.unity3d.player.UnityPlayer");
 		AndroidJavaObject ca = up.GetStatic<AndroidJavaObject> ("currentActivity");
 		AndroidJavaObject packageManager = ca.Call<AndroidJavaObject> ("getPackageManager");
 		AndroidJavaObject launchIntent = null;
 
+
 		launchIntent = packageManager.Call<AndroidJavaObject> ("getLaunchIntentForPackage", "inc.lireneosoft.counterparty");
+		launchIntent.Call<AndroidJavaObject> ("setClassName","inc.lireneosoft.counterparty", "inc.lireneosoft.counterparty.IntentActivity");
 		try {
-		launchIntent.Call<AndroidJavaObject> ("putExtra", "source",urlParams );
+
+			AndroidJavaClass Uri = new AndroidJavaClass("android.net.Uri");
+			AndroidJavaObject uri = Uri.CallStatic<AndroidJavaObject>("parse", "indiewallet://"+urlParams);
+			launchIntent.Call<AndroidJavaObject> ("setData",uri);
+			//launchIntent.Call<AndroidJavaObject>("setAction", "inc.lireneosoft.counterparty.IntentActivity"); 
+			launchIntent.Call<AndroidJavaObject>("putExtra", "source", urlParams); 
 
 		} catch (System.Exception e) {
-		fail = true;
+			fail = true;
 		}
 
 		if (fail) {
-		Debug.Log ("app not found");
+			Debug.Log ("app not found");
 		} else {
-		ca.Call ("startActivity", launchIntent);
+			ca.Call ("startActivity", launchIntent);
 		}
 		up.Dispose ();
 		ca.Dispose ();
 		packageManager.Dispose ();
-		launchIntent.Dispose ();
+		launchIntent.Dispose (); 
+ 
 		#else
 		string qrurl = "indiewallet://"+urlParams;
 
